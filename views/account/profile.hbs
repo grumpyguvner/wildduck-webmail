@@ -43,6 +43,22 @@
                                     {{/if}}
                                 </div>
 
+                                <div class="form-group{{#if errors.editordata}} has-error{{/if}}">
+                                    <label for="signature">Your signature</label>
+                                    <textarea class="form-control" name="signature" id="signature"></textarea>
+                                    {{#if errors.signature}}
+                                        <span class="help-block">{{errors.signature}}</span>
+                                    {{/if}}
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Spam detection</h3>
+                            </div>
+                            <div class="panel-body">
                                 <div class="form-group{{#if errors.spamLevel}} has-error{{/if}}">
                                     <label for="name">Spam detection level</label>
                                     <select class="form-control" name="spamLevel">
@@ -71,7 +87,7 @@
                             <div class="panel-body">
 
                                 <p>
-                                    Leave the following fields blank if you do not wish to forward all incoming emails
+                                    Leave the following fields blank if you do not wish to forward all incoming emails, selective forwarding can be done using <a href="/account/filters">filters</a>.
                                 </p>
 
                                 <div class="form-group{{#if errors.targets}} has-error{{/if}}">
@@ -96,3 +112,37 @@
         </div>
     </div>
 </div>
+
+<script type="text/javascript" src="/components/DOMPurify/dist/purify.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        var signatureHtml = {{#if values.signature}}{{{values.signature}}}{{else}}""{{/if}};
+
+        if (signatureHtml && signatureHtml.length && /^\s*$/.test(document.getElementById('signature').value)) {
+            var clean = DOMPurify.sanitize(signatureHtml+'\n', {
+                ALLOW_UNKNOWN_PROTOCOLS: true,
+                WHOLE_DOCUMENT: false,
+                FORBID_TAGS: ['form', 'script', 'style']
+            });
+
+            {{#unless keepHtmlAsIs}}
+                clean = '<br/><br/>\n<blockquote>' + clean + '</blockquote>';
+            {{/unless}}
+
+            document.getElementById('signature').value = clean;
+        }
+
+        $('#signature').summernote({
+            toolbar: [
+                // [groupName, [list of button]]
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']]
+            ],
+            height: 100
+        });
+
+    }, false);
+</script>

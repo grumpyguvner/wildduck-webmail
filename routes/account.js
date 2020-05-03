@@ -260,6 +260,10 @@ router.get('/profile', passport.checkLogin, (req, res) => {
             selected: defaultSpamLevel === level.value
         })),
 
+        keepHtmlAsIs: true,
+        // signatureHtml: JSON.stringify([].concat(req.user.signature || [])).replace(/\//g, '\\u002f'),
+        signatureHtml: JSON.stringify("".concat(req.user.signature || "")).replace(/\//g, '\\u002f'),
+
         values: req.user,
         csrfToken: req.csrfToken()
     });
@@ -287,6 +291,8 @@ router.post('/profile', passport.checkLogin, (req, res) => {
                     })
                     .empty('')
             ),
+
+            signature: Joi.string().empty(''),
 
             pubKey: Joi.string()
                 .empty('')
@@ -336,6 +342,8 @@ router.post('/profile', passport.checkLogin, (req, res) => {
         req.body.targets = [];
     }
 
+    delete req.body.files;
+    req.body.signature = JSON.stringify("".concat(req.body.signature || "")).replace(/\\r\\n/g, '');
     let result = Joi.validate(req.body, updateSchema, {
         abortEarly: false,
         convert: true,
@@ -376,6 +384,10 @@ router.post('/profile', passport.checkLogin, (req, res) => {
             values: result.value,
             errors,
 
+            keepHtmlAsIs: true,
+//            signatureHtml: JSON.stringify([].concat(result.value.signature || [])).replace(/\//g, '\\u002f'),
+            signatureHtml: JSON.stringify("".concat(result.value.signature || "")).replace(/\//g, '\\u002f'),
+                        
             csrfToken: req.csrfToken()
         });
     };
@@ -400,6 +412,7 @@ router.post('/profile', passport.checkLogin, (req, res) => {
     delete result.value.password2;
 
     result.value.name = result.value.name || '';
+    result.value.signature = result.value.signature || '';
     result.value.targets = result.value.targets || '';
     result.value.pubKey = result.value.pubKey || '';
 

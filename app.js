@@ -39,7 +39,7 @@ if (config.www.proxy) {
 // Do not expose software used
 app.disable('x-powered-by');
 
-app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+app.use(favicon(path.join(__dirname, 'public', 'branding', config.brand, 'favicon.ico')));
 
 app.use(
     logger(config.www.log, {
@@ -114,6 +114,7 @@ app.use((req, res, next) => {
     res.locals.allowJoin = config.service.allowJoin;
     res.locals.u2fEnabled = config.u2f.enabled;
 
+    res.locals.brand = config.brand;
     res.locals.serviceName = config.name;
     res.locals.serviceDomain = config.service.domain;
 

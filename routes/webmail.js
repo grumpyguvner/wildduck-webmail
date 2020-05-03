@@ -266,6 +266,8 @@ router.get('/send', (req, res) => {
                     return addr.address;
                 };
 
+                let mySignature = req.user.signature || "";
+
                 res.render('webmail/send', {
                     layout: 'layout-webmail',
                     activeWebmail: true,
@@ -295,6 +297,7 @@ router.get('/send', (req, res) => {
                         draft: isDraft ? 'yes' : ''
                     },
 
+                    signature: mySignature,
                     messageHtml: JSON.stringify(html).replace(/\//g, '\\u002f'),
                     keepHtmlAsIs,
                     csrfToken: req.csrfToken()

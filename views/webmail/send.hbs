@@ -167,14 +167,19 @@
             var clean = DOMPurify.sanitize(messageHtml.join('\n'), {
                 ALLOW_UNKNOWN_PROTOCOLS: true,
                 WHOLE_DOCUMENT: false,
-                FORBID_TAGS: ['form', 'style']
+                FORBID_TAGS: ['form', 'style', 'script']
             });
 
             {{#unless keepHtmlAsIs}}
-                clean = '<br/><br/>\n<blockquote>' + clean + '</blockquote>';
+                clean = '<blockquote>' + clean + '</blockquote>';
             {{/unless}}
 
             document.getElementById('summernote').value = clean;
+        }
+
+        var signature = {{{signature}}};
+        if (signature && signature.length) {
+            document.getElementById('summernote').value = '<br/><br/>\n' + {{{signature}}} + '<br/>\n' + document.getElementById('summernote').value;
         }
 
         $('#summernote').summernote({
