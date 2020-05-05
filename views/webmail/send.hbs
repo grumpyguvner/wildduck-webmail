@@ -153,7 +153,7 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function(event) {
-        var messageHtml = {{{messageHtml}}};
+        var messageHtml = {{{messageHtml}}} || "";
 
         if (messageHtml && messageHtml.length && /^\s*$/.test(document.getElementById('summernote').value)) {
             // make sure that server timestamps get converted to browser time strings
@@ -177,7 +177,7 @@
             document.getElementById('summernote').value = clean;
         }
 
-        var signature = {{{signature}}};
+        var signature = {{{signature}}} || "";
         if (signature && signature.length) {
             document.getElementById('summernote').value = '<br/><br/>\n' + {{{signature}}} + '<br/>\n' + document.getElementById('summernote').value;
         }
