@@ -32,4 +32,13 @@ router.get('*config-v1.1.xml', (req, res) => {
     });
 });
 
+// Autoconfig file for Microsoft MUA Clients
+router.get('*autodiscover.xml', (req, res) => {
+    res.render('autodiscover', {
+        layout: false,
+        emailAddress: req.query.emailaddress,
+        config: config
+    });
+});
+
 module.exports = router;
