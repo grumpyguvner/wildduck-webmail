@@ -23,4 +23,13 @@ router.get('/tos', (req, res) => {
     });
 });
 
+// Autoconfig file for Mozilla MUA Clients
+router.get('*config-v1.1.xml', (req, res) => {
+    res.render('autoconfig', {
+        layout: false,
+        emailAddress: req.query.emailaddress,
+        config: config
+    });
+});
+
 module.exports = router;

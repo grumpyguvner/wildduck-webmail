@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<clientConfig version="1.1">
+  <emailProvider id="{{ config.service.domain }}">
+    <domain>{{ config.service.domain }}</domain>
+    <displayName>{{ config.name }}</displayName>
+    <displayShortName>{{ config.brand }}</displayShortName>
+    <incomingServer type="imap">
+      <hostname>{{ config.setup.imap.hostname }}</hostname>
+      <port>{{ config.setup.imap.port }}</port>
+      <socketType>{{#if config.setup.imap.secure}}SSL{{else}}STARTTLS{{/if}}</socketType>
+      <authentication>password-encrypted</authentication>
+      <username>{{ emailAddress }}</username>
+    </incomingServer>
+    <incomingServer type="pop3">
+      <hostname>{{ config.setup.pop3.hostname }}</hostname>
+      <port>{{ config.setup.pop3.port }}</port>
+      <socketType>{{#if config.setup.pop3.secure}}SSL{{else}}STARTTLS{{/if}}</socketType>
+      <authentication>password-encrypted</authentication>
+      <username>{{ emailAddress }}</username>
+    </incomingServer>
+    <outgoingServer type="smtp">
+      <hostname>{{ config.setup.smtp.hostname }}</hostname>
+      <port>{{ config.setup.smtp.port }}</port>
+      <socketType>{{#if config.setup.smtp.secure}}SSL{{else}}STARTTLS{{/if}}</socketType>
+      <authentication>password-encrypted</authentication>
+      <username>{{ emailAddress }}</username>
+    </outgoingServer>
+  </emailProvider>
+</clientConfig>
