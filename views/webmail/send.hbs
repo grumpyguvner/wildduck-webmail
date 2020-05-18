@@ -179,7 +179,13 @@
 
         var signature = {{{signature}}} || "";
         if (signature && signature.length) {
-            document.getElementById('summernote').value = '<br/><br/>\n' + {{{signature}}} + '<br/>\n' + document.getElementById('summernote').value;
+            var clean = DOMPurify.sanitize('<br/>'.concat(signature, '<br/>', document.getElementById('summernote').value), {
+                ALLOW_UNKNOWN_PROTOCOLS: true,
+                WHOLE_DOCUMENT: false,
+                FORBID_TAGS: ['form', 'style', 'script']
+            });
+//            document.getElementById('summernote').value = '<br/><br/>' + {{{signature}}} + '<br/>' + document.getElementById('summernote').value;
+            document.getElementById('summernote').value = clean;
         }
 
         $('#summernote').summernote({

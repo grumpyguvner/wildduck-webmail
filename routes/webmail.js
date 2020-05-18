@@ -297,7 +297,8 @@ router.get('/send', (req, res) => {
                         draft: isDraft ? 'yes' : ''
                     },
 
-                    signature: JSON.stringify(mySignature).replace(/\//g, '\\u002f'),
+                    // signature: JSON.stringify(mySignature).replace(/\//g, '\\u002f'), // Removed as this was putting quotes around signature
+                    signature: mySignature,
                     messageHtml: JSON.stringify(html).replace(/\//g, '\\u002f'),
                     keepHtmlAsIs,
                     csrfToken: req.csrfToken()
