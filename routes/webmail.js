@@ -826,6 +826,213 @@ router.get('/:mailbox/message/:message', (req, res, next) => {
     });
 });
 
+router.get('/:mailbox/print/:message', (req, res, next) => {
+    const schema = Joi.object().keys({
+        mailbox: Joi.string()
+            .hex()
+            .length(24),
+        message: Joi.number().min(1)
+    });
+
+    let result = Joi.validate(req.params, schema, {
+        abortEarly: false,
+        convert: true,
+        allowUnknown: true
+    });
+
+    if (result.error) {
+        if (result.error && result.error.details) {
+            result.error.details.forEach(detail => {
+                req.flash('danger', detail.message);
+            });
+        }
+        return res.redirect('/webmail');
+    }
+
+    apiClient.mailboxes.list(req.user, true, (err, mailboxes) => {
+        if (err) {
+            return next(err);
+        }
+
+        let mailbox = result.value.mailbox || mailboxes[0].id;
+        let mailboxExists = false;
+        let selectedMailbox = false;
+        mailboxes.forEach((entry, i) => {
+            entry.index = i + 1;
+            if (entry.id === mailbox) {
+                entry.selected = true;
+                mailboxExists = true;
+                selectedMailbox = entry;
+            } else if (typeof entry.canMoveTo === 'undefined') {
+                entry.canMoveTo = true;
+            }
+        });
+
+        if (!mailboxExists) {
+            return res.redirect('/webmail');
+        }
+
+        apiClient.messages.get(req.user, mailbox, result.value.message, (err, messageData) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (!messageData) {
+                return res.redirect('/webmail');
+            }
+
+            if (messageData.draft && selectedMailbox.specialUse !== '\\Trash' && !messageData.encrypted) {
+                return res.redirect('/webmail/send?draft=true&action=send&draftMailbox=' + mailbox + '&draftMessage=' + result.value.message);
+            }
+
+            let info = [];
+            let securityInfo = [];
+
+            info.push({
+                key: 'From',
+                isHtml: true,
+                value: tools.getAddressesHTML(
+                    messageData.from ||
+                        messageData.sender || {
+                            name: '< >'
+                        }
+                )
+            });
+
+            if (messageData.to) {
+                info.push({
+                    key: 'To',
+                    isHtml: true,
+                    value: tools.getAddressesHTML(messageData.to)
+                });
+            }
+
+            if (messageData.cc) {
+                info.push({
+                    key: 'Cc',
+                    isHtml: true,
+                    value: tools.getAddressesHTML(messageData.cc)
+                });
+            }
+
+            if (messageData.bcc) {
+                info.push({
+                    key: 'Bcc',
+                    isHtml: true,
+                    value: tools.getAddressesHTML(messageData.bcc)
+                });
+            }
+
+            if (messageData.replyTo) {
+                info.push({
+                    key: 'Reply To',
+                    isHtml: true,
+                    value: tools.getAddressesHTML(messageData.replyTo)
+                });
+            }
+
+            if (messageData.verificationResults) {
+                let fromAddress = (messageData.from || messageData.sender || {}).address || '<>';
+                let returnPathAddress = (messageData.envelope && messageData.envelope.from) || '<>';
+
+                securityInfo.push({
+                    key: 'From',
+                    value: fromAddress
+                });
+
+                if (fromAddress !== returnPathAddress) {
+                    securityInfo.push({
+                        key: 'Return Path',
+                        value: returnPathAddress
+                    });
+                }
+
+                if (messageData.verificationResults.spf) {
+                    securityInfo.push({
+                        key: 'Mailed by',
+                        value: messageData.verificationResults.spf
+                    });
+                } else {
+                    securityInfo.push({
+                        key: 'Mailed by',
+                        value: 'sending host was not verified',
+                        textClass: 'text-muted'
+                    });
+                }
+
+                if (messageData.verificationResults.dkim) {
+                    securityInfo.push({
+                        key: 'Signed by',
+                        value: messageData.verificationResults.dkim
+                    });
+                } else {
+                    securityInfo.push({
+                        key: 'Signed by',
+                        value: 'message was not signed',
+                        textClass: 'text-muted'
+                    });
+                }
+
+                if (messageData.verificationResults.tls) {
+                    securityInfo.push({
+                        key: 'Security',
+                        value: 'Standard encryption (TLS)'
+                    });
+                } else {
+                    let sender = messageData.verificationResults.spf || messageData.verificationResults.dkim;
+                    securityInfo.push({
+                        key: 'Security',
+                        value: (sender || 'Sender') + ' did not encrypt this message',
+                        icon: 'exclamation-sign',
+                        textClass: 'text-danger'
+                    });
+                }
+            }
+
+            info.push({
+                key: 'Time',
+                isDate: true,
+                value: messageData.date
+            });
+
+            messageData.html = (messageData.html || []).map(html =>
+                html.replace(/attachment:(ATT\d+)/g, (str, aid) => '/webmail/' + mailbox + '/attachment/' + messageData.id + '/' + aid)
+            );
+
+            messageData.info = info;
+            messageData.securityInfo = securityInfo;
+
+            // make sure that we get the actual unseen count from the server
+            apiClient.mailboxes.get(req.user, selectedMailbox.id, (err, mailbox) => {
+                if (!err && mailbox) {
+                    selectedMailbox.unseen = mailbox.unseen;
+                }
+
+                let data = {
+                    layout: 'layout-print',
+                    activeWebmail: true,
+                    mailboxes: prepareMailboxList(mailboxes),
+                    mailbox: selectedMailbox,
+
+                    isTrash: selectedMailbox.specialUse === '\\Trash',
+                    skipTrash: ['\\Trash', '\\Junk'].includes(selectedMailbox.specialUse),
+
+                    message: messageData,
+                    messageJson: JSON.stringify(messageData).replace(/\//g, '\\u002f'),
+
+                    csrfToken: req.csrfToken()
+                };
+
+                if (selectedMailbox.path === 'INBOX') {
+                    data.inboxUnseen = selectedMailbox.unseen;
+                }
+
+                res.render('webmail/message-print', data);
+            });
+        });
+    });
+});
+
 router.get('/:mailbox/attachment/:message/:attachment', (req, res) => {
     const schema = Joi.object().keys({
         mailbox: Joi.string()
